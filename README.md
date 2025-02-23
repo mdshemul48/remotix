@@ -3,7 +3,6 @@
 A modern web-based SSH client with real-time system monitoring capabilities. Connect to remote servers through your browser while monitoring system resources.
 
 ![SSH Web Client Screenshot](screenshots/main.png)
-*(Screenshot to be added)*
 
 ## Features
 
@@ -51,7 +50,7 @@ A modern web-based SSH client with real-time system monitoring capabilities. Con
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone [<repository-url>](https://github.com/mdshemul48/remotix)
 cd ssh-web-client
 ```
 
@@ -69,20 +68,6 @@ node index.js
 ```
 http://localhost:3000
 ```
-
-## Screenshots
-
-### Main Interface
-![Main Interface](screenshots/interface.png)
-*(Screenshot to be added)*
-
-### System Monitoring
-![System Monitoring](screenshots/monitoring.png)
-*(Screenshot to be added)*
-
-### Terminal Operation
-![Terminal Operation](screenshots/terminal.png)
-*(Screenshot to be added)*
 
 ## Technologies Used
 - Node.js
