@@ -53,7 +53,7 @@ wss.on("connection", (ws) => {
   ws.on("close", () => sshClient.cleanup());
 });
 
-const PORT = 3000;
+const PORT = process.env.HOST_POST || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
