@@ -122,6 +122,18 @@
         box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
       }
 
+      .login-form input::placeholder {
+        color: #9ca3af;
+        font-style: italic;
+      }
+
+      .optional-hint {
+        font-size: 0.8em;
+        color: #6b7280;
+        margin-top: 4px;
+        font-style: italic;
+      }
+
       .login-form button {
         padding: 12px 24px;
         background: #4361ee;
@@ -209,16 +221,41 @@
       </div>
 
       <div class="login-form">
-        <input type="text" id="host" placeholder="Host" value="localhost" />
-        <input type="text" id="port" placeholder="Port" value="22" />
-        <input type="text" id="username" placeholder="Username" />
-        <input type="password" id="password" placeholder="Password" />
-        <input
-          type="text"
-          id="initialPath"
-          placeholder="Initial Path (optional)"
-        />
+        <div>
+          <input
+            type="text"
+            id="host"
+            placeholder="Host (uses default if empty)"
+          />
+        </div>
+        <div>
+          <input type="text" id="port" placeholder="Port (default: 22)" />
+        </div>
+        <div>
+          <input
+            type="text"
+            id="username"
+            placeholder="Username (uses default if empty)"
+          />
+        </div>
+        <div>
+          <input
+            type="password"
+            id="password"
+            placeholder="Password (uses default if empty)"
+          />
+        </div>
+        <div>
+          <input
+            type="text"
+            id="initialPath"
+            placeholder="Initial Path (optional)"
+          />
+        </div>
         <button onclick="connect()">Connect</button>
+        <div class="optional-hint">
+          Default from server config will be used if empty
+        </div>
       </div>
 
       <div class="terminal-container">
@@ -268,13 +305,28 @@
       }
 
       function connect() {
-        const host = document.getElementById("host").value;
-        const port = document.getElementById("port").value;
-        const username = document.getElementById("username").value;
-        const password = document.getElementById("password").value;
-        const initialPath = document.getElementById("initialPath").value;
+        const connectButton = document.querySelector(".login-form button");
+        const host = document.getElementById("host").value.trim();
+        const port = document.getElementById("port").value.trim();
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const initialPath = document.getElementById("initialPath").value.trim();
 
-        saveCredentials(host, port, username, password, initialPath);
+        // Only save to localStorage if values are provided
+        const credsToSave = {};
+        if (host) credsToSave.host = host;
+        if (port) credsToSave.port = port;
+        if (username) credsToSave.username = username;
+        if (password) credsToSave.password = password;
+        if (initialPath) credsToSave.initialPath = initialPath;
+
+        if (Object.keys(credsToSave).length > 0) {
+          localStorage.setItem("ssh-credentials", JSON.stringify(credsToSave));
+        }
+
+        connectButton.disabled = true;
+        connectButton.textContent = "Connecting...";
+
         ws = new WebSocket(`ws://${window.location.host}`);
 
         ws.onopen = () => {
@@ -298,8 +350,13 @@
             term.write(data.message);
           } else if (data.type === "status") {
             term.writeln(`\r\n${data.message}\r\n`);
+            if (data.message === "Connected successfully") {
+              connectButton.textContent = "Connected";
+            }
           } else if (data.type === "error") {
             term.writeln(`\r\n\x1b[31m${data.message}\x1b[0m\r\n`);
+            connectButton.disabled = false;
+            connectButton.textContent = "Connect";
           }
         };
 
@@ -311,6 +368,8 @@
 
         ws.onclose = () => {
           term.writeln("\r\n\x1b[31mConnection closed\x1b[0m\r\n");
+          connectButton.disabled = false;
+          connectButton.textContent = "Connect";
         };
       }
 
