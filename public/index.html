@@ -149,6 +149,23 @@
         background: #3451db;
       }
 
+      .login-form button.retry {
+        background: #059669;
+      }
+
+      .login-form button.retry:hover {
+        background: #047857;
+      }
+
+      .error-message {
+        background: #fef2f2;
+        color: #dc2626;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        display: none;
+      }
+
       .terminal-container {
         flex: 1;
         display: flex;
@@ -225,16 +242,26 @@
           <input
             type="text"
             id="host"
+            autocomplete="off"
+            spellcheck="false"
             placeholder="Host (uses default if empty)"
           />
         </div>
         <div>
-          <input type="text" id="port" placeholder="Port (default: 22)" />
+          <input
+            type="text"
+            id="port"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Port (default: 22)"
+          />
         </div>
         <div>
           <input
             type="text"
             id="username"
+            autocomplete="off"
+            spellcheck="false"
             placeholder="Username (uses default if empty)"
           />
         </div>
@@ -242,6 +269,8 @@
           <input
             type="password"
             id="password"
+            autocomplete="new-password"
+            spellcheck="false"
             placeholder="Password (uses default if empty)"
           />
         </div>
@@ -249,6 +278,8 @@
           <input
             type="text"
             id="initialPath"
+            autocomplete="off"
+            spellcheck="false"
             placeholder="Initial Path (optional)"
           />
         </div>
@@ -304,8 +335,10 @@
         );
       }
 
-      function connect() {
+      function connect(isRetry = false) {
         const connectButton = document.querySelector(".login-form button");
+        if (connectButton.disabled && !isRetry) return;
+
         const host = document.getElementById("host").value.trim();
         const port = document.getElementById("port").value.trim();
         const username = document.getElementById("username").value.trim();
@@ -326,6 +359,11 @@
 
         connectButton.disabled = true;
         connectButton.textContent = "Connecting...";
+
+        if (ws) {
+          ws.close();
+          ws = null;
+        }
 
         ws = new WebSocket(`ws://${window.location.host}`);
 
@@ -352,11 +390,21 @@
             term.writeln(`\r\n${data.message}\r\n`);
             if (data.message === "Connected successfully") {
               connectButton.textContent = "Connected";
+              connectButton.disabled = true;
             }
           } else if (data.type === "error") {
             term.writeln(`\r\n\x1b[31m${data.message}\x1b[0m\r\n`);
-            connectButton.disabled = false;
-            connectButton.textContent = "Connect";
+            if (data.message.includes("Could not reach server")) {
+              connectButton.textContent = "Retry";
+              connectButton.className = "retry";
+              connectButton.disabled = false;
+              connectButton.onclick = () => connect(true);
+            } else {
+              connectButton.textContent = "Connect";
+              connectButton.className = "";
+              connectButton.disabled = false;
+              connectButton.onclick = () => connect(false);
+            }
           }
         };
 
@@ -368,8 +416,10 @@
 
         ws.onclose = () => {
           term.writeln("\r\n\x1b[31mConnection closed\x1b[0m\r\n");
-          connectButton.disabled = false;
-          connectButton.textContent = "Connect";
+          if (!connectButton.className.includes("retry")) {
+            connectButton.disabled = false;
+            connectButton.textContent = "Connect";
+          }
         };
       }
 
@@ -388,7 +438,7 @@
         document.getElementById("platform").textContent = info.platform;
       }
 
-      loadSavedCredentials();
+      //   loadSavedCredentials();
     </script>
   </body>
 </html>
