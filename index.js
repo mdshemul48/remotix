@@ -2,22 +2,57 @@ require("dotenv").config();
 const express = require("express");
 const { Server } = require("ws");
 const path = require("path");
+const fs = require("fs");
+const https = require("https");
 const SSHClient = require("./lib/sshClient");
 
 const app = express();
-const server = require("http").createServer(app);
 
+// SSL configuration
+const sslOptions = {
+  key: fs.readFileSync(path.join(__dirname, "certs/private.key")),
+  cert: fs.readFileSync(path.join(__dirname, "certs/certificate.pem")),
+};
+
+const server = https.createServer(sslOptions, app);
+
+// CORS middleware - allow all origins or specific ones from env
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type");
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",")
+    : ["*"];
+
+  const origin = req.headers.origin;
+
+  if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    res.header("Access-Control-Allow-Credentials", "true");
+  }
+
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
   next();
 });
 
-const wss = new Server({ server });
+// WebSocket server with origin verification
+const wss = new Server({
+  server,
+  verifyClient: ({ origin, req }, callback) => {
+    const allowedOrigins = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(",")
+      : ["*"];
+
+    if (allowedOrigins.includes("*")) {
+      callback(true);
+    } else {
+      callback(allowedOrigins.includes(origin));
+    }
+  },
+  clientTracking: true,
+});
 
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -53,7 +88,7 @@ wss.on("connection", (ws) => {
   ws.on("close", () => sshClient.cleanup());
 });
 
-const PORT = process.env.HOST_POST || 3000;
+const PORT = process.env.HOST_PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Secure server running on https://localhost:${PORT}`);
 });

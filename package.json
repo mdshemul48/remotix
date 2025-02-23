@@ -4,7 +4,8 @@
   "description": "Browser-based SSH client with system monitoring",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "generate-certs": "mkdir -p certs && openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certs/private.key -out certs/certificate.pem"
   },
   "dependencies": {
     "dotenv": "^16.3.1",
