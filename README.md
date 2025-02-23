@@ -50,7 +50,7 @@ A modern web-based SSH client with real-time system monitoring capabilities. Con
 
 1. Clone the repository:
 ```bash
-git clone [<repository-url>](https://github.com/mdshemul48/remotix)
+git clone https://github.com/mdshemul48/remotix
 cd ssh-web-client
 ```
 
