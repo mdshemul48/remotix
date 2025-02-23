@@ -8,13 +8,21 @@ const SSHClient = require("./lib/sshClient");
 
 const app = express();
 
-// SSL configuration
-const sslOptions = {
-  key: fs.readFileSync(path.join(__dirname, "certs/private.key")),
-  cert: fs.readFileSync(path.join(__dirname, "certs/certificate.pem")),
-};
-
-const server = https.createServer(sslOptions, app);
+// SSL configuration with Let's Encrypt certificates
+let server;
+try {
+  const sslOptions = {
+    key: fs.readFileSync(process.env.SSL_KEY_PATH),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH),
+  };
+  server = https.createServer(sslOptions, app);
+} catch (error) {
+  console.error("Error loading SSL certificates:", error.message);
+  console.error(
+    "Make sure to run the application with sufficient permissions to read the certificates"
+  );
+  process.exit(1);
+}
 
 // CORS middleware - allow all origins or specific ones from env
 app.use((req, res, next) => {
